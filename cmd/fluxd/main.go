@@ -198,6 +198,9 @@ func main() {
 
 		dockerConfig = fs.String("docker-config", "", "Path to a docker config to use for image registry credentials")
 
+		kubectlArgsApply  = fs.StringSlice("kubectl-args-apply", []string{}, "Adds any extra arguments to kubectl apply")
+		kubectlArgsDelete = fs.StringSlice("kubectl-args-delete", []string{}, "Adds any extra arguments to kubectl delete")
+
 		_ = fs.Duration("registry-cache-expiry", 0, "")
 	)
 	fs.MarkDeprecated("registry-cache-expiry", "No longer used; cache entries are expired adaptively according to how often they change")
@@ -515,7 +518,11 @@ func main() {
 		logger.Log("kubectl", kubectl)
 
 		client := kubernetes.MakeClusterClientset(clientset, dynamicClientset, hrClientset, discoClientset)
-		kubectlApplier := kubernetes.NewKubectl(kubectl, restClientConfig)
+		var kubectlArgs = map[string][]string{
+			"apply":  *kubectlArgsApply,
+			"delete": *kubectlArgsDelete,
+		}
+		kubectlApplier := kubernetes.NewKubectl(kubectl, restClientConfig, kubectlArgs)
 		allowedNamespaces := make(map[string]struct{})
 		for _, n := range append(*k8sNamespaceWhitelist, *k8sAllowNamespace...) {
 			allowedNamespaces[n] = struct{}{}
