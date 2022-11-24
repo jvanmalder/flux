@@ -455,12 +455,14 @@ type Applier interface {
 type Kubectl struct {
 	exe    string
 	config *rest.Config
+	args   map[string][]string
 }
 
-func NewKubectl(exe string, config *rest.Config) *Kubectl {
+func NewKubectl(exe string, config *rest.Config, args map[string][]string) *Kubectl {
 	return &Kubectl{
 		exe:    exe,
 		config: config,
+		args:   args,
 	}
 }
 
@@ -535,10 +537,11 @@ func (objs applyOrder) Less(i, j int) bool {
 }
 
 func (c *Kubectl) apply(logger log.Logger, cs changeSet, errored map[resource.ID]error) (errs cluster.SyncError) {
-	f := func(objs []applyObject, cmd string, args ...string) {
+	f := func(objs []applyObject, cmd string) {
 		if len(objs) == 0 {
 			return
 		}
+		var args []string = c.args[cmd]
 		logger.Log("cmd", cmd, "args", strings.Join(args, " "), "count", len(objs))
 		args = append(args, cmd)
 
